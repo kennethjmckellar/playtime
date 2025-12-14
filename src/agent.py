@@ -11,17 +11,17 @@ class SportsResearchAgent:
         # Instead of AI, scrape known websites for youth sports programs
         programs = []
         
-        # Example sites to scrape with known addresses and counties
+        # Example sites to scrape with known addresses, counties, and metro areas
         sites = [
-            ('https://www.littleleague.org/', 'Little League International', 'Baseball', '539 US Highway Route 15, Williamsport, PA 17701', 'Lycoming'),
-            ('https://www.ymca.net/', 'YMCA', 'Various', '101 North Wacker Drive, Chicago, IL 60606', 'Cook'),
-            ('https://ayso.org/', 'American Youth Soccer Organization', 'Soccer', '19750 S Vermont Ave, Torrance, CA 90502', 'Los Angeles'),
-            ('https://www.bgca.org/', 'Boys & Girls Clubs of America', 'Various', '1275 Peachtree St NE, Atlanta, GA 30309', 'Fulton'),
-            ('https://www.i9sports.com/', 'i9 Sports', 'Various', '201 Florida St, Mandeville, LA 70471', 'St. Tammany'),
-            ('https://www.usyouthsoccer.org/', 'United States Youth Soccer Association', 'Soccer', '123 Main St, Chicago, IL 60601', 'Cook')
+            ('https://www.littleleague.org/', 'Little League International', 'Baseball', '539 US Highway Route 15, Williamsport, PA 17701', 'Lycoming', 'Williamsport'),
+            ('https://www.ymca.net/', 'YMCA', 'Various', '101 North Wacker Drive, Chicago, IL 60606', 'Cook', 'Chicago'),
+            ('https://ayso.org/', 'American Youth Soccer Organization', 'Soccer', '19750 S Vermont Ave, Torrance, CA 90502', 'Los Angeles', 'Los Angeles'),
+            ('https://www.bgca.org/', 'Boys & Girls Clubs of America', 'Various', '1275 Peachtree St NE, Atlanta, GA 30309', 'Fulton', 'Atlanta'),
+            ('https://www.i9sports.com/', 'i9 Sports', 'Various', '201 Florida St, Mandeville, LA 70471', 'St. Tammany', 'New Orleans'),
+            ('https://www.usyouthsoccer.org/', 'United States Youth Soccer Association', 'Soccer', '123 Main St, Chicago, IL 60601', 'Cook', 'Chicago')
         ]
         
-        for url, org, sport, known_address, county in sites:
+        for url, org, sport, known_address, county, metro_area in sites:
             try:
                 response = requests.get(url, timeout=10)
                 soup = BeautifulSoup(response.text, 'html.parser')
@@ -64,7 +64,7 @@ class SportsResearchAgent:
                     'address_state': address_state,
                     'address_zip': address_zip,
                     'county': county,
-                    'metro_area': 'Unknown',
+                    'metro_area': metro_area,
                     'phone': phone,
                     'email': email,
                     'contact_name': 'Contact Person',
