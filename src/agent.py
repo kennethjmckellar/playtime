@@ -14,26 +14,10 @@ class SportsResearchAgent:
         # Extract sport from query
         sport = self.extract_sport(query)
         
-        # List of major cities and states to research
+        # List of major cities and states to research (limited for testing)
         locations = [
             ('Los Angeles', 'California'),
-            ('San Francisco', 'California'),
-            ('San Diego', 'California'),
             ('Houston', 'Texas'),
-            ('Dallas', 'Texas'),
-            ('Austin', 'Texas'),
-            ('Miami', 'Florida'),
-            ('Orlando', 'Florida'),
-            ('Tampa', 'Florida'),
-            ('New York City', 'New York'),
-            ('Buffalo', 'New York'),
-            ('Albany', 'New York'),
-            ('Chicago', 'Illinois'),
-            ('Springfield', 'Illinois'),
-            ('Peoria', 'Illinois'),
-            ('Philadelphia', 'Pennsylvania'),
-            ('Pittsburgh', 'Pennsylvania'),
-            ('Harrisburg', 'Pennsylvania'),
         ]
         
         info = ''
