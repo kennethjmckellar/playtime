@@ -38,7 +38,7 @@ class SportsResearchAgent:
         
         info = ''
         for city, state in locations:
-            prompt = f"Research youth {sport} programs in {city}, {state}. Provide detailed information for up to 2 programs. Return in this exact format for each program on a new line: Program: [Program Name], Organization: [Organization Name], Organization Type: [Type], Sport: [Sport], Program Type: [Type], Skill Level: [Level], Address Street: [Street], Address City: [City], Address State: [State], Address Zip: [Zip], County: [County], Metro Area: [Metro], Phone: [Phone], Email: [Email], Contact Name: [Contact], Website: [Website], Social Media Facebook: [FB], Social Media Instagram: [IG], Age Min: [Min], Age Max: [Max], Season: [Season], Registration Fee: [Fee], Notes: [Notes]"
+            prompt = f"Research youth {sport} programs in {city}, {state}. Provide detailed information for up to 2 programs. Return in this exact format for each program on a new line: Name: [Name], Organization: [Organization], Organization Type: [Type], Sport: [Sport], Program Type: [Type], Skill Level: [Level], Address: [Address], City: [City], State: [State], Zip: [Zip], County: [County], Metro Area: [Metro], Phone: [Phone], Email: [Email], Website: [Website], Social Media Facebook: [FB], Social Media Instagram: [IG], Age Min: [Min], Age Max: [Max], Season: [Season], Registration Fee: [Fee], Notes: [Notes]"
             
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -60,6 +60,49 @@ class SportsResearchAgent:
             return 'basketball'
         else:
             return 'sports'
+    
+    def update_database(self, handler, info):
+        programs = self.parse_program_info(info)
+        for program in programs:
+            handler.add_program(program)
+    
+    def parse_program_info(self, info):
+        programs = []
+        lines = info.strip().split('\n')
+        for line in lines:
+            if line.strip():
+                parts = line.split(', ')
+                program_data = {}
+                for part in parts:
+                    if ': ' in part:
+                        key, value = part.split(': ', 1)
+                        key = key.lower().replace(' ', '_')
+                        program_data[key] = value
+                # Map keys to match dict
+                program_data['name'] = program_data.pop('name', 'Unknown')
+                program_data['organization_name'] = program_data.pop('organization', 'Unknown')
+                program_data['organization_type'] = program_data.pop('organization_type', 'Nonprofit')
+                program_data['sport_type'] = program_data.pop('sport', 'Unknown')
+                program_data['program_type'] = program_data.pop('program_type', 'League')
+                program_data['skill_level'] = program_data.pop('skill_level', 'all_levels')
+                program_data['address'] = program_data.pop('address', 'Unknown')
+                program_data['city'] = program_data.pop('city', 'Unknown')
+                program_data['state'] = program_data.pop('state', 'Unknown')
+                program_data['zip_code'] = program_data.pop('zip', 'Unknown')
+                # keep county, metro_area, phone, email, website
+                program_data['social_media_facebook'] = program_data.pop('social_media_facebook', 'Unknown')
+                program_data['social_media_instagram'] = program_data.pop('social_media_instagram', 'Unknown')
+                program_data['age_min'] = program_data.pop('age_min', '5')
+                program_data['age_max'] = program_data.pop('age_max', '18')
+                program_data['season'] = program_data.pop('season', 'Year-round')
+                program_data['registration_fee'] = program_data.pop('registration_fee', 'Varies')
+                program_data['notes'] = program_data.pop('notes', 'Unknown')
+                program_data['contact_name'] = 'Contact Person'
+                program_data['verified'] = 'No'
+                program_data['data_source'] = 'AI Research'
+                program_data['program_id'] = f"{program_data['organization_name'].lower().replace(' ', '_')}_{program_data['sport_type'].lower()}_{program_data['name'].lower().replace(' ', '_')[:20]}"
+                programs.append(program_data)
+        return programs
 
     def fill_missing_info(self, program_data):
         # Since we're using scraping, fill missing with defaults instead of AI
