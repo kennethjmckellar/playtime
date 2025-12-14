@@ -71,5 +71,8 @@ class DataHandler:
                 print(f"Warning: Missing {req} in some rows")
         self._save()
 
-    def _save(self):
-        self.df.to_csv(PROGRAMS_CSV, index=False)
+    def export_to_json(self, filepath):
+        import json
+        with open(filepath, 'w') as f:
+            json.dump(self.get_all_programs(), f, indent=2)
+        print(f"Exported {len(self.df)} programs to {filepath}")

@@ -1,12 +1,14 @@
 from openai import OpenAI
 import requests
 from bs4 import BeautifulSoup
-from config.config import OPENAI_API_KEY
+from config.config import OPENAI_API_KEY, LOCATIONS
 
 class SportsResearchAgent:
     def __init__(self):
         self.client = OpenAI(api_key=OPENAI_API_KEY)
         self.used_states = set()
+        self.api_calls = 0
+        self.total_tokens = 0
 
     def research_sports_programs(self, query, handler):
         # Use AI to research programs in one city per query, saving progress incrementally
@@ -16,38 +18,7 @@ class SportsResearchAgent:
         sport = self.extract_sport(query)
         
         # List of major cities and states to research (expanded for comprehensive coverage)
-        locations = [
-            ('Los Angeles', 'California'),
-            ('San Francisco', 'California'),
-            ('San Diego', 'California'),
-            ('Houston', 'Texas'),
-            ('Dallas', 'Texas'),
-            ('Austin', 'Texas'),
-            ('Miami', 'Florida'),
-            ('Orlando', 'Florida'),
-            ('Tampa', 'Florida'),
-            ('New York City', 'New York'),
-            ('Buffalo', 'New York'),
-            ('Albany', 'New York'),
-            ('Chicago', 'Illinois'),
-            ('Springfield', 'Illinois'),
-            ('Peoria', 'Illinois'),
-            ('Philadelphia', 'Pennsylvania'),
-            ('Pittsburgh', 'Pennsylvania'),
-            ('Harrisburg', 'Pennsylvania'),
-            ('Columbus', 'Ohio'),
-            ('Cleveland', 'Ohio'),
-            ('Cincinnati', 'Ohio'),
-            ('Atlanta', 'Georgia'),
-            ('Savannah', 'Georgia'),
-            ('Augusta', 'Georgia'),
-            ('Charlotte', 'North Carolina'),
-            ('Raleigh', 'North Carolina'),
-            ('Greensboro', 'North Carolina'),
-            ('Detroit', 'Michigan'),
-            ('Grand Rapids', 'Michigan'),
-            ('Lansing', 'Michigan'),
-        ]
+        locations = LOCATIONS
         
         # Load existing programs to check counts per city
         from config.config import PROGRAMS_CSV
@@ -81,6 +52,10 @@ class SportsResearchAgent:
                 messages=[{"role": "user", "content": prompt}]
             )
             
+            self.api_calls += 1
+            if hasattr(response, 'usage') and response.usage:
+                self.total_tokens += response.usage.total_tokens
+            
             program_info = response.choices[0].message.content
             programs = self.parse_program_info(program_info)
             
@@ -109,7 +84,7 @@ class SportsResearchAgent:
         except Exception as e:
             print(f"Error researching {selected_city}, {selected_state}: {e}")
         
-        return total_added
+        return total_added, self.api_calls, self.total_tokens
     
     def extract_sport(self, query):
         query_lower = query.lower()
