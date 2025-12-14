@@ -119,7 +119,7 @@ class SportsResearchAgent:
                 prompt = f"Find the {', '.join(missing_fields)} for {program['program_name']} by {program['organization_name']} in {program.get('address_city', 'Unknown')}, {program.get('address_state', 'Unknown')}."
                 try:
                     response = self.client.chat.completions.create(
-                        model="gpt-3.5-turbo",
+                        model="gpt-4o-mini",
                         messages=[{"role": "user", "content": prompt}]
                     )
                     update_info = response.choices[0].message.content
