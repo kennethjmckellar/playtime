@@ -42,12 +42,6 @@ class SportsResearchAgent:
                 
                 # Use known email
                 
-                phone = soup.find(string=lambda text: text and '(' in text and ')' in text)
-                phone = phone.strip() if phone else 'Unknown'
-                
-                email = soup.find('a', href=lambda href: href and 'mailto:' in href)
-                email = email['href'].replace('mailto:', '') if email else 'Unknown'
-                
                 contact_name = 'Contact Person'  # Placeholder
                 
                 program_data = {
