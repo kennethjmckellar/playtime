@@ -48,7 +48,10 @@ class SportsResearchAgent:
     def update_database(self, handler, info):
         programs = self.parse_program_info(info)
         for program in programs:
-            handler.add_program(program)
+            try:
+                handler.insert_program(**program)
+            except Exception as e:
+                print(f"Error inserting program {program.get('program_name', 'Unknown')}: {e}")
     
     def parse_program_info(self, info):
         programs = []
