@@ -57,7 +57,6 @@ class SportsResearchAgent:
                 self.total_tokens += response.usage.total_tokens
             
             program_info = response.choices[0].message.content
-            print(f"Raw AI response for query '{query}':\n{program_info}\n---END RESPONSE---\n")
             programs = self.parse_program_info(program_info)
             
             for program in programs:
@@ -161,27 +160,28 @@ class SportsResearchAgent:
                     current_state = current_state.strip()
                 continue
             
-            # Check for numbered program entries like "1. Name: ..."
-            if re.match(r'^\d+\.\s+Name:\s*', line):
+            # Check for numbered program entries like "1. **Name:** ..."
+            if re.match(r'^\d+\.\s+\*\*Name:\*\*\s*', line):
                 # Start of a new program
                 if current_program:
                     programs.append(current_program)
                 
                 current_program = {}
                 # Extract the name from this line
-                name_match = re.search(r'Name:\s*(.+)', line)
+                name_match = re.search(r'\*\*Name:\*\*\s*(.+)', line)
                 if name_match:
                     current_program['name'] = name_match.group(1).strip()
                 continue
             
             # If we have a current program, check for other fields
             if current_program is not None:
-                # Check for field lines like "   Organization: ..."
-                if not line.startswith('###') and not re.match(r'^\d+\.', line) and ': ' in line:
-                    key, value = line.split(': ', 1)
-                    key = key.strip().lower().replace(' ', '_')
-                    value = value.strip()
-                    current_program[key] = value
+                # Check for field lines like "   **Organization:** ..."
+                if '**' in line and ':** ' in line:
+                    field_match = re.search(r'\*\*([^:]+):\*\*\s*(.+)', line)
+                    if field_match:
+                        key = field_match.group(1).strip().lower().replace(' ', '_')
+                        value = field_match.group(2).strip()
+                        current_program[key] = value
         
         # Add the last program
         if current_program:
