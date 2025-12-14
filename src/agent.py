@@ -22,16 +22,46 @@ class SportsResearchAgent:
         )
         return response.choices[0].message.content.strip()
 
-    def scrape_website(self, url):
-        # Simple web scraping example
-        try:
-            response = requests.get(url)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            # Extract relevant info, e.g., team names from common selectors
-            teams = soup.find_all(['h2', 'h3', 'div'], string=lambda text: text and 'team' in text.lower())
-            return [elem.text.strip() for elem in teams if elem.text.strip()]
-        except:
-            return []
+    def fill_missing_info(self, program_data):
+        # Required fields
+        required = [
+            'organization_name', 'program_name', 'contact_name',
+            'address_street', 'address_city', 'address_state', 'address_zip', 'county', 'metro_area',
+            'phone', 'email', 'sport_type'
+        ]
+        # Check if website or social media
+        has_online = program_data.get('website') and program_data['website'] != 'Unknown' or \
+                     (program_data.get('social_media_facebook') and program_data['social_media_facebook'] != 'Unknown') or \
+                     (program_data.get('social_media_instagram') and program_data['social_media_instagram'] != 'Unknown')
+        
+        missing = [field for field in required if not program_data.get(field) or program_data[field] == 'Unknown']
+        if not has_online:
+            missing.append('website')  # Need at least one
+        
+        if missing:
+            query = f"Find the following information for the youth sports program '{program_data.get('program_name', 'Unknown')}' by '{program_data.get('organization_name', 'Unknown')}' in {program_data.get('address_city', 'USA')}, {program_data.get('address_state', 'USA')}: {', '.join(missing)}"
+            try:
+                response = self.client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "user", "content": query}
+                    ],
+                    max_tokens=500
+                )
+                info = response.choices[0].message.content.strip()
+                # Parse the response to fill missing fields
+                lines = info.split('\n')
+                for line in lines:
+                    line = line.strip()
+                    for field in missing:
+                        if field.replace('_', ' ').title() in line or field.upper() in line:
+                            value = line.split(':', 1)[-1].strip() if ':' in line else line
+                            program_data[field] = value
+                            break
+            except Exception as e:
+                print(f"Error filling missing info for {program_data.get('program_name')}: {e}")
+        
+        return program_data
 
     def update_database(self, handler, info):
         lines = info.split('\n')
@@ -65,35 +95,40 @@ class SportsResearchAgent:
 
                 program_id = f"{organization_name}_{sport_type}_{program_name}".replace(' ', '_').replace(',', '').lower()
 
+                program_data = {
+                    'program_id': program_id,
+                    'organization_name': organization_name,
+                    'organization_type': organization_type,
+                    'sport_type': sport_type,
+                    'program_name': program_name,
+                    'program_type': program_type,
+                    'skill_level': skill_level,
+                    'address_street': address_street,
+                    'address_city': address_city,
+                    'address_state': address_state,
+                    'address_zip': address_zip,
+                    'county': county,
+                    'metro_area': metro_area,
+                    'phone': phone,
+                    'email': email,
+                    'contact_name': contact_name,
+                    'website': website,
+                    'social_media_facebook': social_media_facebook,
+                    'social_media_instagram': social_media_instagram,
+                    'age_min': age_min,
+                    'age_max': age_max,
+                    'season': season,
+                    'registration_fee': registration_fee,
+                    'notes': notes,
+                    'verified': 'No',
+                    'data_source': 'AI Research'
+                }
+                
+                # Fill missing info via additional AI query
+                program_data = self.fill_missing_info(program_data)
+                
                 try:
-                    handler.insert_program(
-                        program_id=program_id,
-                        organization_name=organization_name,
-                        organization_type=organization_type,
-                        sport_type=sport_type,
-                        program_name=program_name,
-                        program_type=program_type,
-                        skill_level=skill_level,
-                        address_street=address_street,
-                        address_city=address_city,
-                        address_state=address_state,
-                        address_zip=address_zip,
-                        county=county,
-                        metro_area=metro_area,
-                        phone=phone,
-                        email=email,
-                        contact_name=contact_name,
-                        website=website,
-                        social_media_facebook=social_media_facebook,
-                        social_media_instagram=social_media_instagram,
-                        age_min=age_min,
-                        age_max=age_max,
-                        season=season,
-                        registration_fee=registration_fee,
-                        notes=notes,
-                        verified='No',
-                        data_source='AI Research'
-                    )
+                    handler.insert_program(**program_data)
                 except ValueError as e:
                     print(f"Error inserting program {program_name}: {e}")
         handler.validate_data()

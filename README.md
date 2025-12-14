@@ -19,5 +19,6 @@ All columns: program_id, organization_name, organization_type, sport_type, progr
 
 ## Features
 - AI-powered research for structured program data extraction, ensuring all required fields (address, name, contact info, and website/social media) are provided
+- **Automatic info completion**: If initial AI research misses required details, the agent makes follow-up queries to fill missing information via internet research
 - CSV storage matching the provided starter file schema
 - Data validation to ensure every column is handled, data is complete (required fields present), and formatted consistently
