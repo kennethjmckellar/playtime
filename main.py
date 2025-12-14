@@ -19,8 +19,8 @@ def main():
     
     for query in queries:
         print(f"Researching: {query}")
-        info = agent.research_sports_programs(query)
-        agent.update_database(handler, info)
+        added = agent.research_sports_programs(query, handler)
+        print(f"Added {added} programs for this query")
 
     # Print some data
     programs = handler.get_all_programs()
