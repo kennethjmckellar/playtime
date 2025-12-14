@@ -7,22 +7,22 @@ def main():
 
     # Queries for different regions/sports to get more programs
     queries = [
-        "youth sports programs in the USA",
-        "youth baseball programs in the USA",
-        "youth soccer programs in the USA",
-        "youth basketball programs in the USA",
-        "youth sports programs in California",
-        "youth sports programs in Texas",
-        "youth sports programs in Florida",
-        "youth sports programs in New York",
-        "youth sports programs in the Midwest",
-        "youth sports programs in the South",
-        "youth sports programs in the Northeast",
-        "youth sports programs in the West",
-        "youth baseball in the Midwest",
-        "youth soccer in the South",
-        "youth basketball in the Northeast",
-        "youth sports in major US cities"
+        "youth baseball leagues and programs in major US cities",
+        "youth soccer clubs and academies in the USA", 
+        "youth basketball programs and camps nationwide",
+        "youth sports leagues in California cities",
+        "youth sports programs in Texas metropolitan areas",
+        "youth sports leagues in Florida cities",
+        "youth sports programs in New York state",
+        "youth baseball programs in Midwest states",
+        "youth soccer programs in Southern states",
+        "youth basketball programs in Northeast region",
+        "youth sports academies in Western states",
+        "youth baseball leagues in Chicago, Detroit, Milwaukee",
+        "youth soccer clubs in Atlanta, Nashville, Charlotte",
+        "youth basketball programs in Boston, Philadelphia, Baltimore",
+        "youth sports programs in Denver, Phoenix, Las Vegas",
+        "youth sports leagues in Seattle, Portland, San Francisco"
     ]
     
     total_added_all = 0

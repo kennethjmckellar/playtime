@@ -43,7 +43,68 @@ class SportsResearchAgent:
             return 0
         
         cities_str = ', '.join([f"{city}, {state}" for city, state in selected_locations])
-        prompt = f"Research youth {sport} programs in these cities: {cities_str}. Provide detailed information for up to 20 programs per city. For each program, provide ALL available information - do not use 'Unknown' or placeholder values if you can find real information. Return in this exact format for each program:\n\n1. Name: [Actual Program Name]\n   Organization: [Actual Organization Name]\n   Organization Type: [Type]\n   Sport: [{sport}]\n   Program Type: [Type]\n   Skill Level: [Level]\n   Address: [Street Address]\n   City: [City Name]\n   State: [State Name]\n   Zip: [Zip Code]\n   County: [County]\n   Metro Area: [Metro Area]\n   Phone: [Phone Number]\n   Email: [Email Address]\n   Website: [Website URL]\n   Social Media Facebook: [Facebook URL]\n   Social Media Instagram: [Instagram URL]\n   Age Min: [Min Age]\n   Age Max: [Max Age]\n   Season: [Season]\n   Cost: [Cost Information]\n   Notes: [Additional Notes]"
+        prompt = f"""Research youth {sport} programs in these cities: {cities_str}. 
+
+CRITICAL FORMATTING REQUIREMENTS:
+- Start each city section with "### [City Name], [State Name]"
+- Number each program as "1. ", "2. ", etc.
+- Use EXACTLY this format for each program field (one field per line):
+
+Name: [Program Name]
+Organization: [Organization Name]
+Organization Type: [Type]
+Sport: {sport}
+Program Type: [Type]
+Skill Level: [Level]
+Address: [Street Address]
+City: [City Name]
+State: [State Name]
+Zip: [Zip Code]
+County: [County]
+Metro Area: [Metro Area]
+Phone: [Phone Number]
+Email: [Email Address]
+Website: [Website URL]
+Social Media Facebook: [Facebook URL]
+Social Media Instagram: [Instagram URL]
+Age Min: [Min Age]
+Age Max: [Max Age]
+Season: [Season]
+Cost: [Cost Information]
+Notes: [Notes]
+
+EXAMPLE FORMAT (copy this exactly):
+
+### Los Angeles, California
+
+1. Name: LA Dodgers Youth Academy
+Organization: Los Angeles Dodgers Foundation
+Organization Type: Nonprofit
+Sport: {sport}
+Program Type: Clinic
+Skill Level: All Levels
+Address: 1000 Vin Scully Ave
+City: Los Angeles
+State: California
+Zip: 90012
+County: Los Angeles
+Metro Area: Los Angeles
+Phone: (323) 224-1500
+Email: youth@ladodgers.com
+Website: www.dodgers.com/youth
+Social Media Facebook: facebook.com/dodgers
+Social Media Instagram: instagram.com/dodgers
+Age Min: 6
+Age Max: 16
+Season: Summer
+Cost: $150
+Notes: Baseball skills development program
+
+2. Name: Another Program Name
+Organization: Another Organization
+...
+
+Provide up to 20 programs per city. Use 'Unknown' sparingly - try to find real information."""
         
         try:
             response = self.client.chat.completions.create(
@@ -160,28 +221,27 @@ class SportsResearchAgent:
                     current_state = current_state.strip()
                 continue
             
-            # Check for numbered program entries like "1. **Name:** ..."
-            if re.match(r'^\d+\.\s+\*\*Name:\*\*\s*', line):
+            # Check for numbered program entries like "1. Name: ..."
+            if re.match(r'^\d+\.\s+Name:\s*', line):
                 # Start of a new program
                 if current_program:
                     programs.append(current_program)
                 
                 current_program = {}
                 # Extract the name from this line
-                name_match = re.search(r'\*\*Name:\*\*\s*(.+)', line)
+                name_match = re.search(r'Name:\s*(.+)', line)
                 if name_match:
                     current_program['name'] = name_match.group(1).strip()
                 continue
             
             # If we have a current program, check for other fields
             if current_program is not None:
-                # Check for field lines like "   **Organization:** ..."
-                if '**' in line and ':** ' in line:
-                    field_match = re.search(r'\*\*([^:]+):\*\*\s*(.+)', line)
-                    if field_match:
-                        key = field_match.group(1).strip().lower().replace(' ', '_')
-                        value = field_match.group(2).strip()
-                        current_program[key] = value
+                # Check for field lines like "Organization: ..."
+                if not line.startswith('###') and not re.match(r'^\d+\.', line) and ': ' in line:
+                    key, value = line.split(': ', 1)
+                    key = key.strip().lower().replace(' ', '_')
+                    value = value.strip()
+                    current_program[key] = value
         
         # Add the last program
         if current_program:

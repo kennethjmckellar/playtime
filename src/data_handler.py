@@ -63,7 +63,6 @@ class DataHandler:
             if key not in kwargs or not kwargs[key] or kwargs[key] == 'Unknown':
                 kwargs[key] = default
         
-        print(f"Inserting program: {kwargs.get('program_name', 'Unknown')} by {kwargs.get('organization_name', 'Unknown')}")
         if kwargs['program_id'] in self.df['program_id'].values:
             # Update existing
             idx = self.df[self.df['program_id'] == kwargs['program_id']].index[0]
