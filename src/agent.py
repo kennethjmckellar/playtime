@@ -85,6 +85,21 @@ class SportsResearchAgent:
             programs = self.parse_program_info(program_info)
             
             for program in programs:
+                # Set known location fields
+                program['address_city'] = selected_city
+                program['address_state'] = selected_state
+                program['address_zip'] = program.get('address_zip', 'Unknown')
+                program['county'] = program.get('county', 'Unknown')
+                program['metro_area'] = program.get('metro_area', selected_city)
+                
+                # Ensure required fields have defaults
+                program['organization_name'] = program.get('organization_name', 'Unknown Organization')
+                program['program_name'] = program.get('program_name', f"{selected_city} Youth Program")
+                program['sport_type'] = program.get('sport_type', sport)
+                program['phone'] = program.get('phone', 'Unknown')
+                program['email'] = program.get('email', 'Unknown')
+                program['website'] = program.get('website', 'Unknown')
+                
                 try:
                     handler.insert_program(**program)
                     total_added += 1
