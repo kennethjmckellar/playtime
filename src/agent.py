@@ -41,12 +41,14 @@ class SportsResearchAgent:
             print(f"No more cities to research for query: {query}")
             return 0
         
-        prompt = f"Research youth {sport} programs in {selected_city}, {selected_state}. Provide detailed information for up to 20 programs. Return in this exact format for each program on a new line: Name: [Program Name], Organization: [Organization Name], Organization Type: [Type], Sport: [Sport], Program Type: [Type], Skill Level: [Level], Address: [Street Address], City: [{selected_city}], State: [{selected_state}], Zip: [Zip Code], County: [County], Metro Area: [Metro Area], Phone: [Phone], Email: [Email], Website: [Website], Social Media Facebook: [FB], Social Media Instagram: [IG], Age Min: [Min], Age Max: [Max], Season: [Season], Cost: [Summarized cost info], Notes: [Notes]"
+        cities_str = ', '.join([f"{city}, {state}" for city, state in selected_locations])
+        prompt = f"Research youth {sport} programs in these cities: {cities_str}. Provide detailed information for up to 20 programs per city. Return in this exact format for each program on a new line: Name: [Program Name], Organization: [Organization Name], Organization Type: [Type], Sport: [Sport], Program Type: [Type], Skill Level: [Level], Address: [Street Address], City: [City Name], State: [State Name], Zip: [Zip Code], County: [County], Metro Area: [Metro Area], Phone: [Phone], Email: [Email], Website: [Website], Social Media Facebook: [FB], Social Media Instagram: [IG], Age Min: [Min], Age Max: [Max], Season: [Season], Cost: [Summarized cost info], Notes: [Notes]"
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=3000
             )
             
             self.api_calls += 1
@@ -57,16 +59,21 @@ class SportsResearchAgent:
             programs = self.parse_program_info(program_info)
             
             for program in programs:
-                # Set known location fields
-                program['address_city'] = selected_city
-                program['address_state'] = selected_state
-                program['address_zip'] = program.get('address_zip', 'Unknown')
-                program['county'] = program.get('county', 'Unknown')
-                program['metro_area'] = program.get('metro_area', selected_city)
+                # Set known location fields based on parsed city/state
+                parsed_city = program.get('address_city', 'Unknown')
+                parsed_state = program.get('address_state', 'Unknown')
+                # Find matching location
+                for loc_city, loc_state in selected_locations:
+                    if parsed_city == loc_city and parsed_state == loc_state:
+                        program['address_city'] = loc_city
+                        program['address_state'] = loc_state
+                        program['county'] = program.get('county', 'Unknown')
+                        program['metro_area'] = program.get('metro_area', loc_city)
+                        break
                 
                 # Ensure required fields have defaults
                 program['organization_name'] = program.get('organization_name', 'Unknown Organization')
-                program['program_name'] = program.get('program_name', f"{selected_city} Youth Program")
+                program['program_name'] = program.get('program_name', f"{parsed_city} Youth Program")
                 program['sport_type'] = program.get('sport_type', sport)
                 program['phone'] = program.get('phone', 'Unknown')
                 program['email'] = program.get('email', 'Unknown')
@@ -75,11 +82,11 @@ class SportsResearchAgent:
                 try:
                     handler.insert_program(**program)
                     total_added += 1
-                    print(f"Added program: {program.get('program_name', 'Unknown')} in {selected_city}, {selected_state}")
+                    print(f"Added program: {program.get('program_name', 'Unknown')} in {parsed_city}, {parsed_state}")
                 except Exception as e:
-                    print(f"Error inserting program in {selected_city}, {selected_state}: {e}")
+                    print(f"Error inserting program in {parsed_city}, {parsed_state}: {e}")
         except Exception as e:
-            print(f"Error researching {selected_city}, {selected_state}: {e}")
+            print(f"Error researching {cities_str}: {e}")
         
         return total_added, self.api_calls, self.total_tokens
     
