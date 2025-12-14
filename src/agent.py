@@ -14,15 +14,55 @@ class SportsResearchAgent:
         # Extract sport from query
         sport = self.extract_sport(query)
         
-        # List of major cities and states to research (limited for testing)
+        # List of major cities and states to research (expanded for comprehensive coverage)
         locations = [
             ('Los Angeles', 'California'),
+            ('San Francisco', 'California'),
+            ('San Diego', 'California'),
             ('Houston', 'Texas'),
+            ('Dallas', 'Texas'),
+            ('Austin', 'Texas'),
+            ('Miami', 'Florida'),
+            ('Orlando', 'Florida'),
+            ('Tampa', 'Florida'),
+            ('New York City', 'New York'),
+            ('Buffalo', 'New York'),
+            ('Albany', 'New York'),
+            ('Chicago', 'Illinois'),
+            ('Springfield', 'Illinois'),
+            ('Peoria', 'Illinois'),
+            ('Philadelphia', 'Pennsylvania'),
+            ('Pittsburgh', 'Pennsylvania'),
+            ('Harrisburg', 'Pennsylvania'),
+            ('Columbus', 'Ohio'),
+            ('Cleveland', 'Ohio'),
+            ('Cincinnati', 'Ohio'),
+            ('Atlanta', 'Georgia'),
+            ('Savannah', 'Georgia'),
+            ('Augusta', 'Georgia'),
+            ('Charlotte', 'North Carolina'),
+            ('Raleigh', 'North Carolina'),
+            ('Greensboro', 'North Carolina'),
+            ('Detroit', 'Michigan'),
+            ('Grand Rapids', 'Michigan'),
+            ('Lansing', 'Michigan'),
         ]
+        
+        # Load existing programs to check counts per city
+        from config.config import PROGRAMS_CSV
+        import pandas as pd
+        try:
+            existing_df = pd.read_csv(PROGRAMS_CSV)
+            city_counts = existing_df.groupby('address_city').size().to_dict()
+        except:
+            city_counts = {}
         
         info = ''
         for city, state in locations:
-            prompt = f"Research youth {sport} programs in {city}, {state}. Provide detailed information for up to 2 programs. Return in this exact format for each program on a new line: Name: [Program Name], Organization: [Organization Name], Organization Type: [Type], Sport: [Sport], Program Type: [Type], Skill Level: [Level], Address: [Street Address], City: [{city}], State: [{state}], Zip: [Zip Code], County: [County], Metro Area: [Metro Area], Phone: [Phone], Email: [Email], Website: [Website], Social Media Facebook: [FB], Social Media Instagram: [IG], Age Min: [Min], Age Max: [Max], Season: [Season], Registration Fee: [Fee], Notes: [Notes]"
+            current_count = city_counts.get(city, 0)
+            if current_count >= 5:  # Target 5 programs per city
+                continue
+            prompt = f"Research youth {sport} programs in {city}, {state}. Provide detailed information for up to 5 programs. Return in this exact format for each program on a new line: Name: [Program Name], Organization: [Organization Name], Organization Type: [Type], Sport: [Sport], Program Type: [Type], Skill Level: [Level], Address: [Street Address], City: [{city}], State: [{state}], Zip: [Zip Code], County: [County], Metro Area: [Metro Area], Phone: [Phone], Email: [Email], Website: [Website], Social Media Facebook: [FB], Social Media Instagram: [IG], Age Min: [Min], Age Max: [Max], Season: [Season], Registration Fee: [Fee], Notes: [Notes]"
             
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -46,12 +86,42 @@ class SportsResearchAgent:
             return 'sports'
     
     def update_database(self, handler, info):
+        # First, review existing programs and fill missing information
+        self.fill_missing_info(handler)
+        
         programs = self.parse_program_info(info)
         for program in programs:
             try:
                 handler.insert_program(**program)
             except Exception as e:
                 print(f"Error inserting program {program.get('program_name', 'Unknown')}: {e}")
+    
+    def fill_missing_info(self, handler):
+        programs = handler.get_all_programs()
+        for program in programs:
+            missing_fields = []
+            for field in ['phone', 'email', 'website', 'social_media_facebook', 'social_media_instagram']:
+                if program.get(field) == 'Unknown':
+                    missing_fields.append(field)
+            if missing_fields and program.get('organization_name') != 'Unknown':
+                prompt = f"Find the {', '.join(missing_fields)} for {program['program_name']} by {program['organization_name']} in {program.get('address_city', 'Unknown')}, {program.get('address_state', 'Unknown')}."
+                try:
+                    response = self.client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=[{"role": "user", "content": prompt}]
+                    )
+                    update_info = response.choices[0].message.content
+                    # Simple parsing: assume "Phone: xxx\nEmail: yyy"
+                    for line in update_info.split('\n'):
+                        if ': ' in line:
+                            key, value = line.split(': ', 1)
+                            key_lower = key.lower().replace(' ', '_')
+                            if key_lower in missing_fields and value.strip():
+                                program[key_lower] = value.strip()
+                    # Update in database
+                    handler.update_program(program['program_id'], program)
+                except Exception as e:
+                    print(f"Error updating {program['program_name']}: {e}")
     
     def parse_program_info(self, info):
         programs = []

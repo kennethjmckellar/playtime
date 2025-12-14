@@ -39,7 +39,13 @@ class DataHandler:
         if not has_website and not has_social:
             raise ValueError("Either website or at least one social media link (Facebook or Instagram) is required")
         if kwargs['program_id'] in self.df['program_id'].values:
-            return  # Already exists
+            # Update existing
+            idx = self.df[self.df['program_id'] == kwargs['program_id']].index[0]
+            for col in kwargs:
+                if col in self.columns:
+                    self.df.at[idx, col] = kwargs[col]
+            self._save()
+            return
         # Fill missing with defaults
         for col in self.columns:
             if col not in kwargs:
