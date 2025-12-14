@@ -62,6 +62,8 @@ class DataHandler:
         for key, default in defaults.items():
             if key not in kwargs or not kwargs[key] or kwargs[key] == 'Unknown':
                 kwargs[key] = default
+        
+        print(f"Inserting program: {kwargs.get('program_name', 'Unknown')} by {kwargs.get('organization_name', 'Unknown')}")
         if kwargs['program_id'] in self.df['program_id'].values:
             # Update existing
             idx = self.df[self.df['program_id'] == kwargs['program_id']].index[0]
@@ -77,6 +79,9 @@ class DataHandler:
         new_row = pd.DataFrame([kwargs], columns=self.columns)
         self.df = pd.concat([self.df, new_row], ignore_index=True)
         self._save()
+
+    def _save(self):
+        self.df.to_csv(PROGRAMS_CSV, index=False)
 
     def get_all_programs(self):
         return self.df.to_dict('records')
