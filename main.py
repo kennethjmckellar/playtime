@@ -14,7 +14,15 @@ def main():
         "youth sports programs in California",
         "youth sports programs in Texas",
         "youth sports programs in Florida",
-        "youth sports programs in New York"
+        "youth sports programs in New York",
+        "youth sports programs in the Midwest",
+        "youth sports programs in the South",
+        "youth sports programs in the Northeast",
+        "youth sports programs in the West",
+        "youth baseball in the Midwest",
+        "youth soccer in the South",
+        "youth basketball in the Northeast",
+        "youth sports in major US cities"
     ]
     
     total_added_all = 0

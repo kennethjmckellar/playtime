@@ -29,18 +29,15 @@ class SportsResearchAgent:
         except:
             city_counts = {}
         
-        # Select one city from a different state that needs research
-        selected_city = None
-        selected_state = None
+        # Select up to 3 cities from different states that need research
+        selected_locations = []
         for city, state in locations:
             current_count = city_counts.get(city, 0)
-            if current_count < 5 and state not in self.used_states:
-                selected_city = city
-                selected_state = state
+            if current_count < 20 and state not in self.used_states and len(selected_locations) < 3:
+                selected_locations.append((city, state))
                 self.used_states.add(state)
-                break
         
-        if not selected_city:
+        if not selected_locations:
             print(f"No more cities to research for query: {query}")
             return 0
         
