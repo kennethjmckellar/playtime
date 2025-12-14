@@ -19,24 +19,49 @@ class DataHandler:
             self.df = pd.DataFrame(columns=self.columns)
 
     def insert_program(self, **kwargs):
-        # Required fields: all address, name, and contact information, plus website or social media
-        required = [
-            'program_id', 'organization_name', 'program_name',
-            'address_street', 'address_city', 'address_state', 'address_zip', 'county', 'metro_area',
-            'phone', 'email'
-        ]
-        for req in required:
-            if req not in kwargs or not kwargs[req] or kwargs[req] == 'Unknown':
-                raise ValueError(f"{req} is required and cannot be unknown")
-        # Additional required
+        # Required fields: program_id, sport_type, and at least one name field
+        if 'program_id' not in kwargs or not kwargs['program_id']:
+            raise ValueError("program_id is required")
         if 'sport_type' not in kwargs or not kwargs['sport_type'] or kwargs['sport_type'] == 'Unknown':
             raise ValueError("sport_type is required")
-        # Website or social media required
-        has_website = kwargs.get('website') and kwargs['website'] != 'Unknown'
-        has_social = (kwargs.get('social_media_facebook') and kwargs['social_media_facebook'] != 'Unknown') or \
-                     (kwargs.get('social_media_instagram') and kwargs['social_media_instagram'] != 'Unknown')
-        if not has_website and not has_social:
-            raise ValueError("Either website or at least one social media link (Facebook or Instagram) is required")
+        
+        # At least one of organization_name or program_name must be meaningful
+        org_name = kwargs.get('organization_name', '')
+        prog_name = kwargs.get('program_name', '')
+        if (not org_name or org_name == 'Unknown') and (not prog_name or prog_name == 'Unknown'):
+            raise ValueError("At least organization_name or program_name must be provided")
+        
+        # Fill in defaults for missing required fields
+        defaults = {
+            'organization_name': prog_name if org_name == 'Unknown' else org_name,
+            'program_name': org_name if prog_name == 'Unknown' else prog_name,
+            'organization_type': 'Nonprofit',
+            'program_type': 'League',
+            'skill_level': 'all_levels',
+            'address_street': 'Unknown',
+            'address_city': 'Unknown',
+            'address_state': 'Unknown',
+            'address_zip': 'Unknown',
+            'county': 'Unknown',
+            'metro_area': 'Unknown',
+            'phone': 'Unknown',
+            'email': 'Unknown',
+            'contact_name': 'Contact Person',
+            'website': 'Unknown',
+            'social_media_facebook': 'Unknown',
+            'social_media_instagram': 'Unknown',
+            'age_min': '5',
+            'age_max': '18',
+            'season': 'Year-round',
+            'cost': 'Unknown',
+            'notes': 'Unknown',
+            'verified': 'No',
+            'data_source': 'AI Research'
+        }
+        
+        for key, default in defaults.items():
+            if key not in kwargs or not kwargs[key] or kwargs[key] == 'Unknown':
+                kwargs[key] = default
         if kwargs['program_id'] in self.df['program_id'].values:
             # Update existing
             idx = self.df[self.df['program_id'] == kwargs['program_id']].index[0]

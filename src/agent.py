@@ -43,7 +43,7 @@ class SportsResearchAgent:
             return 0
         
         cities_str = ', '.join([f"{city}, {state}" for city, state in selected_locations])
-        prompt = f"Research youth {sport} programs in these cities: {cities_str}. Provide detailed information for up to 20 programs per city. Return in this exact format for each program on a new line: Name: [Program Name], Organization: [Organization Name], Organization Type: [Type], Sport: [Sport], Program Type: [Type], Skill Level: [Level], Address: [Street Address], City: [City Name], State: [State Name], Zip: [Zip Code], County: [County], Metro Area: [Metro Area], Phone: [Phone], Email: [Email], Website: [Website], Social Media Facebook: [FB], Social Media Instagram: [IG], Age Min: [Min], Age Max: [Max], Season: [Season], Cost: [Summarized cost info], Notes: [Notes]"
+        prompt = f"Research youth {sport} programs in these cities: {cities_str}. Provide detailed information for up to 20 programs per city. For each program, provide ALL available information - do not use 'Unknown' or placeholder values if you can find real information. Return in this exact format for each program:\n\n1. Name: [Actual Program Name]\n   Organization: [Actual Organization Name]\n   Organization Type: [Type]\n   Sport: [{sport}]\n   Program Type: [Type]\n   Skill Level: [Level]\n   Address: [Street Address]\n   City: [City Name]\n   State: [State Name]\n   Zip: [Zip Code]\n   County: [County]\n   Metro Area: [Metro Area]\n   Phone: [Phone Number]\n   Email: [Email Address]\n   Website: [Website URL]\n   Social Media Facebook: [Facebook URL]\n   Social Media Instagram: [Instagram URL]\n   Age Min: [Min Age]\n   Age Max: [Max Age]\n   Season: [Season]\n   Cost: [Cost Information]\n   Notes: [Additional Notes]"
         
         try:
             response = self.client.chat.completions.create(
@@ -161,25 +161,29 @@ class SportsResearchAgent:
                     current_state = current_state.strip()
                 continue
             
-            # Check for numbered program entries like "1. Name: ..."
-            if line.match(r'^\d+\.\s+Name:'):
+            # Check for numbered program entries like "1. **Name**: ..."
+            if re.match(r'^\d+\.\s+\*\*Name\*\*:\s*', line):
                 # Start of a new program
                 if current_program:
                     programs.append(current_program)
                 
                 current_program = {}
                 # Extract the name from this line
-                name_part = line.split('Name: ', 1)[1] if 'Name: ' in line else 'Unknown'
-                current_program['name'] = name_part.strip()
+                name_match = re.search(r'\*\*Name\*\*:\s*(.+)', line)
+                if name_match:
+                    current_program['name'] = name_match.group(1).strip()
                 continue
             
             # If we have a current program, check for other fields
             if current_program is not None:
-                if ': ' in line and not line.startswith('###'):
-                    key, value = line.split(': ', 1)
-                    key = key.strip().lower().replace(' ', '_')
-                    value = value.strip()
-                    current_program[key] = value
+                # Check for field lines like "   - Organization: ..."
+                if line.startswith('   - ') and ': ' in line:
+                    field_line = line[5:]  # Remove the "   - " prefix
+                    if ': ' in field_line:
+                        key, value = field_line.split(': ', 1)
+                        key = key.strip().lower().replace(' ', '_')
+                        value = value.strip()
+                        current_program[key] = value
         
         # Add the last program
         if current_program:
