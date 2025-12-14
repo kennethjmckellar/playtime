@@ -1,11 +1,12 @@
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 import requests
 from bs4 import BeautifulSoup
 from config.config import OPENAI_API_KEY
 
 class SportsResearchAgent:
     def __init__(self):
-        openai.api_key = OPENAI_API_KEY
 
     def research_sports_programs(self, query):
         # Use OpenAI to generate structured info for programs
@@ -13,11 +14,9 @@ class SportsResearchAgent:
         Provide information in the following format for each program. ALL address, name, and contact information is required, and either website or social media links must be provided:
         Program: Program Name, Organization: Organization Name, Organization Type: Type, Sport: Sport Type, Program Type: Type (e.g., League, Camp), Skill Level: Level, Address Street: Street, Address City: City, Address State: State, Address Zip: Zip, County: County, Metro Area: Area, Phone: Phone, Email: Email, Contact Name: Name, Website: URL, Social Media Facebook: URL, Social Media Instagram: URL, Age Min: Min Age, Age Max: Max Age, Season: Season, Registration Fee: Fee, Notes: Description
         Ensure all required fields are provided for each program, including at least website or one social media link."""
-        response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=prompt,
-            max_tokens=2000
-        )
+        response = client.completions.create(engine="text-davinci-003",
+        prompt=prompt,
+        max_tokens=2000)
         return response.choices[0].text.strip()
 
     def scrape_website(self, url):
@@ -60,9 +59,9 @@ class SportsResearchAgent:
                 season = next((p.replace('Season:', '').strip() for p in parts if p.startswith('Season:')), '')
                 registration_fee = next((p.replace('Registration Fee:', '').strip() for p in parts if p.startswith('Registration Fee:')), '')
                 notes = next((p.replace('Notes:', '').strip() for p in parts if p.startswith('Notes:')), '')
-                
+
                 program_id = f"{organization_name}_{sport_type}_{program_name}".replace(' ', '_').replace(',', '').lower()
-                
+
                 try:
                     handler.insert_program(
                         program_id=program_id,
