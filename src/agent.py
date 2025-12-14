@@ -56,6 +56,7 @@ class SportsResearchAgent:
                 self.total_tokens += response.usage.total_tokens
             
             program_info = response.choices[0].message.content
+            print(f"Raw AI response for query '{query}':\n{program_info}\n---END RESPONSE---\n")
             programs = self.parse_program_info(program_info)
             
             for program in programs:
@@ -142,16 +143,39 @@ class SportsResearchAgent:
     def parse_program_info(self, info):
         programs = []
         lines = info.strip().split('\n')
+        current_city = None
+        current_state = None
+        
         for line in lines:
-            if line.strip():
-                parts = line.split(', ')
+            line = line.strip()
+            if not line:
+                continue
+                
+            # Check for city header like "### Los Angeles, California"
+            if line.startswith('### ') and ',' in line:
+                city_state = line[4:].strip()
+                if ', ' in city_state:
+                    current_city, current_state = city_state.split(', ', 1)
+                    current_state = current_state.strip()
+                continue
+            
+            # Check for numbered program entries like "1. Name: ..."
+            if line.startswith(('1. ', '2. ', '3. ', '4. ', '5. ', '6. ', '7. ', '8. ', '9. ', '10. ')):
+                # Remove the number prefix
+                program_line = line.split('. ', 1)[1] if '. ' in line else line
+                
+                # Parse the comma-separated key-value pairs
+                parts = program_line.split(', ')
                 program_data = {}
+                
                 for part in parts:
                     if ': ' in part:
                         key, value = part.split(': ', 1)
-                        key = key.lower().replace(' ', '_')
+                        key = key.strip().lower().replace(' ', '_')
+                        value = value.strip()
                         program_data[key] = value
-                # Map keys to match dict
+                
+                # Map keys to match database schema
                 program_data['program_name'] = program_data.pop('name', 'Unknown')
                 program_data['organization_name'] = program_data.pop('organization', 'Unknown')
                 program_data['organization_type'] = program_data.pop('organization_type', 'Nonprofit')
@@ -159,10 +183,14 @@ class SportsResearchAgent:
                 program_data['program_type'] = program_data.pop('program_type', 'League')
                 program_data['skill_level'] = program_data.pop('skill_level', 'all_levels')
                 program_data['address_street'] = program_data.pop('address', 'Unknown')
-                program_data['address_city'] = program_data.pop('city', 'Unknown')
-                program_data['address_state'] = program_data.pop('state', 'Unknown')
+                program_data['address_city'] = program_data.pop('city', current_city or 'Unknown')
+                program_data['address_state'] = program_data.pop('state', current_state or 'Unknown')
                 program_data['address_zip'] = program_data.pop('zip', 'Unknown')
-                # keep county, metro_area, phone, email, website
+                program_data['county'] = program_data.pop('county', 'Unknown')
+                program_data['metro_area'] = program_data.pop('metro_area', current_city or 'Unknown')
+                program_data['phone'] = program_data.pop('phone', 'Unknown')
+                program_data['email'] = program_data.pop('email', 'Unknown')
+                program_data['website'] = program_data.pop('website', 'Unknown')
                 program_data['social_media_facebook'] = program_data.pop('social_media_facebook', 'Unknown')
                 program_data['social_media_instagram'] = program_data.pop('social_media_instagram', 'Unknown')
                 program_data['age_min'] = program_data.pop('age_min', '5')
@@ -174,7 +202,9 @@ class SportsResearchAgent:
                 program_data['verified'] = 'No'
                 program_data['data_source'] = 'AI Research'
                 program_data['program_id'] = f"{program_data['organization_name'].lower().replace(' ', '_')}_{program_data['sport_type'].lower()}_{program_data['program_name'].lower().replace(' ', '_')[:20]}"
+                
                 programs.append(program_data)
+        
         return programs
 
     def fill_missing_info(self, program_data):
