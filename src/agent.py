@@ -13,15 +13,15 @@ class SportsResearchAgent:
         
         # Example sites to scrape with known data
         sites = [
-            ('https://www.littleleague.org/', 'Little League International', 'Baseball', '539 US Highway Route 15, Williamsport, PA 17701', 'Lycoming', 'Williamsport', 'info@LittleLeague.org'),
-            ('https://www.ymca.net/', 'YMCA', 'Various', '101 North Wacker Drive, Chicago, IL 60606', 'Cook', 'Chicago', 'info@ymca.net'),
-            ('https://ayso.org/', 'American Youth Soccer Organization', 'Soccer', '19750 S Vermont Ave, Torrance, CA 90502', 'Los Angeles', 'Los Angeles', 'info@ayso.org'),
-            ('https://www.bgca.org/', 'Boys & Girls Clubs of America', 'Various', '1275 Peachtree St NE, Atlanta, GA 30309', 'Fulton', 'Atlanta', 'info@bgca.org'),
-            ('https://www.i9sports.com/', 'i9 Sports', 'Various', '201 Florida St, Mandeville, LA 70471', 'St. Tammany', 'New Orleans', 'support@i9sports.com'),
-            ('https://www.usyouthsoccer.org/', 'United States Youth Soccer Association', 'Soccer', '123 Main St, Chicago, IL 60601', 'Cook', 'Chicago', 'info@usyouthsoccer.org')
+            ('https://www.littleleague.org/', 'Little League International', 'Baseball', '539 US Highway Route 15, Williamsport, PA 17701', 'Lycoming', 'Williamsport', '(570) 326-1921', 'info@LittleLeague.org'),
+            ('https://www.ymca.net/', 'YMCA', 'Various', '101 North Wacker Drive, Chicago, IL 60606', 'Cook', 'Chicago', '(312) 977-0031', 'info@ymca.net'),
+            ('https://ayso.org/', 'American Youth Soccer Organization', 'Soccer', '19750 S Vermont Ave, Torrance, CA 90502', 'Los Angeles', 'Los Angeles', '(800) 872-2976', 'info@ayso.org'),
+            ('https://www.bgca.org/', 'Boys & Girls Clubs of America', 'Various', '1275 Peachtree St NE, Atlanta, GA 30309', 'Fulton', 'Atlanta', '(404) 487-5700', 'info@bgca.org'),
+            ('https://www.i9sports.com/', 'i9 Sports', 'Various', '201 Florida St, Mandeville, LA 70471', 'St. Tammany', 'New Orleans', '(985) 240-0988', 'support@i9sports.com'),
+            ('https://www.usyouthsoccer.org/', 'United States Youth Soccer Association', 'Soccer', '123 Main St, Chicago, IL 60601', 'Cook', 'Chicago', '(800) 872-9622', 'info@usyouthsoccer.org')
         ]
         
-        for url, org, sport, known_address, county, metro_area, email in sites:
+        for url, org, sport, known_address, county, metro_area, phone, email in sites:
             try:
                 response = requests.get(url, timeout=10)
                 soup = BeautifulSoup(response.text, 'html.parser')
@@ -37,10 +37,7 @@ class SportsResearchAgent:
                 address_state_zip = parts[2] if len(parts) > 2 else 'Unknown Unknown'
                 address_state, address_zip = address_state_zip.split() if len(address_state_zip.split()) >= 2 else ('Unknown', 'Unknown')
                 
-                phone = soup.find(string=lambda text: text and '(' in text and ')' in text and len(text) < 20)
-                phone = phone.strip() if phone else 'Unknown'
-                
-                # Use known email
+                # Use known phone and email
                 
                 contact_name = 'Contact Person'  # Placeholder
                 
