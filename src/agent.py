@@ -8,77 +8,58 @@ class SportsResearchAgent:
         self.client = OpenAI(api_key=OPENAI_API_KEY)
 
     def research_sports_programs(self, query):
-        # Instead of AI, scrape known websites for youth sports programs
+        # Use AI to research programs city by city, state by state
         programs = []
         
-        # Example sites to scrape with known data
-        sites = [
-            ('https://www.littleleague.org/', 'Little League International', 'Baseball', '539 US Highway Route 15, Williamsport, PA 17701', 'Lycoming', 'Williamsport', '(570) 326-1921', 'info@LittleLeague.org'),
-            ('https://www.ymca.net/', 'YMCA', 'Various', '101 North Wacker Drive, Chicago, IL 60606', 'Cook', 'Chicago', '(312) 977-0031', 'info@ymca.net'),
-            ('https://ayso.org/', 'American Youth Soccer Organization', 'Soccer', '19750 S Vermont Ave, Torrance, CA 90502', 'Los Angeles', 'Los Angeles', '(800) 872-2976', 'info@ayso.org'),
-            ('https://www.bgca.org/', 'Boys & Girls Clubs of America', 'Various', '1275 Peachtree St NE, Atlanta, GA 30309', 'Fulton', 'Atlanta', '(404) 487-5700', 'info@bgca.org'),
-            ('https://www.i9sports.com/', 'i9 Sports', 'Various', '201 Florida St, Mandeville, LA 70471', 'St. Tammany', 'New Orleans', '(985) 240-0988', 'support@i9sports.com'),
-            ('https://www.usyouthsoccer.org/', 'United States Youth Soccer Association', 'Soccer', '123 Main St, Chicago, IL 60601', 'Cook', 'Chicago', '(800) 872-9622', 'info@usyouthsoccer.org')
+        # Extract sport from query
+        sport = self.extract_sport(query)
+        
+        # List of major cities and states to research
+        locations = [
+            ('Los Angeles', 'California'),
+            ('San Francisco', 'California'),
+            ('San Diego', 'California'),
+            ('Houston', 'Texas'),
+            ('Dallas', 'Texas'),
+            ('Austin', 'Texas'),
+            ('Miami', 'Florida'),
+            ('Orlando', 'Florida'),
+            ('Tampa', 'Florida'),
+            ('New York City', 'New York'),
+            ('Buffalo', 'New York'),
+            ('Albany', 'New York'),
+            ('Chicago', 'Illinois'),
+            ('Springfield', 'Illinois'),
+            ('Peoria', 'Illinois'),
+            ('Philadelphia', 'Pennsylvania'),
+            ('Pittsburgh', 'Pennsylvania'),
+            ('Harrisburg', 'Pennsylvania'),
         ]
         
-        for url, org, sport, known_address, county, metro_area, phone, email in sites:
-            try:
-                response = requests.get(url, timeout=10)
-                soup = BeautifulSoup(response.text, 'html.parser')
-                
-                # Extract basic info
-                title = soup.find('title').text.strip() if soup.find('title') else f'{org} Youth Sports Program'
-                
-                # Use known address
-                address_text = known_address
-                parts = [p.strip() for p in address_text.split(', ')]
-                address_street = parts[0] if len(parts) > 0 else 'Unknown'
-                address_city = parts[1] if len(parts) > 1 else 'Unknown'
-                address_state_zip = parts[2] if len(parts) > 2 else 'Unknown Unknown'
-                address_state, address_zip = address_state_zip.split() if len(address_state_zip.split()) >= 2 else ('Unknown', 'Unknown')
-                
-                # Use known phone and email
-                
-                contact_name = 'Contact Person'  # Placeholder
-                
-                program_data = {
-                    'program_id': f"{org.lower().replace(' ', '_')}_{sport.lower()}_{title.lower().replace(' ', '_')[:20]}",
-                    'organization_name': org,
-                    'organization_type': 'Nonprofit Organization',
-                    'sport_type': sport,
-                    'program_name': title,
-                    'program_type': 'League',
-                    'skill_level': 'all_levels',
-                    'address_street': address_street,
-                    'address_city': address_city,
-                    'address_state': address_state,
-                    'address_zip': address_zip,
-                    'county': county,
-                    'metro_area': metro_area,
-                    'phone': phone,
-                    'email': email,
-                    'contact_name': 'Contact Person',
-                    'website': url,
-                    'social_media_facebook': 'Unknown',
-                    'social_media_instagram': 'Unknown',
-                    'age_min': '5',
-                    'age_max': '18',
-                    'season': 'Year-round',
-                    'registration_fee': 'Varies',
-                    'notes': f'Program from {org} website',
-                    'verified': 'No',
-                    'data_source': 'Web Scraping'
-                }
-                
-                # Fill missing if needed (though scraping provides basics)
-                program_data = self.fill_missing_info(program_data)
-                programs.append(program_data)
-            except Exception as e:
-                print(f"Error scraping {url}: {e}")
+        info = ''
+        for city, state in locations:
+            prompt = f"Research youth {sport} programs in {city}, {state}. Provide detailed information for up to 2 programs. Return in this exact format for each program on a new line: Program: [Program Name], Organization: [Organization Name], Organization Type: [Type], Sport: [Sport], Program Type: [Type], Skill Level: [Level], Address Street: [Street], Address City: [City], Address State: [State], Address Zip: [Zip], County: [County], Metro Area: [Metro], Phone: [Phone], Email: [Email], Contact Name: [Contact], Website: [Website], Social Media Facebook: [FB], Social Media Instagram: [IG], Age Min: [Min], Age Max: [Max], Season: [Season], Registration Fee: [Fee], Notes: [Notes]"
+            
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            
+            program_info = response.choices[0].message.content
+            info += program_info + '\n'
         
-        # Convert to text format for parsing
-        info = '\n'.join([f"Program: {p['program_name']}, Organization: {p['organization_name']}, Organization Type: {p['organization_type']}, Sport: {p['sport_type']}, Program Type: {p['program_type']}, Skill Level: {p['skill_level']}, Address Street: {p['address_street']}, Address City: {p['address_city']}, Address State: {p['address_state']}, Address Zip: {p['address_zip']}, County: {p['county']}, Metro Area: {p['metro_area']}, Phone: {p['phone']}, Email: {p['email']}, Contact Name: {p['contact_name']}, Website: {p['website']}, Social Media Facebook: {p['social_media_facebook']}, Social Media Instagram: {p['social_media_instagram']}, Age Min: {p['age_min']}, Age Max: {p['age_max']}, Season: {p['season']}, Registration Fee: {p['registration_fee']}, Notes: {p['notes']}" for p in programs])
         return info
+    
+    def extract_sport(self, query):
+        query_lower = query.lower()
+        if 'baseball' in query_lower:
+            return 'baseball'
+        elif 'soccer' in query_lower:
+            return 'soccer'
+        elif 'basketball' in query_lower:
+            return 'basketball'
+        else:
+            return 'sports'
 
     def fill_missing_info(self, program_data):
         # Since we're using scraping, fill missing with defaults instead of AI
