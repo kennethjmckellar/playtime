@@ -6,9 +6,10 @@ from config.config import OPENAI_API_KEY
 class SportsResearchAgent:
     def __init__(self):
         self.client = OpenAI(api_key=OPENAI_API_KEY)
+        self.used_states = set()
 
     def research_sports_programs(self, query, handler):
-        # Use AI to research programs city by city, state by state, saving progress incrementally
+        # Use AI to research programs in one city per query, saving progress incrementally
         total_added = 0
         
         # Extract sport from query
@@ -57,30 +58,41 @@ class SportsResearchAgent:
         except:
             city_counts = {}
         
+        # Select one city from a different state that needs research
+        selected_city = None
+        selected_state = None
         for city, state in locations:
             current_count = city_counts.get(city, 0)
-            if current_count >= 5:  # Target 5 programs per city
-                continue
-            prompt = f"Research youth {sport} programs in {city}, {state}. Provide detailed information for up to 5 programs. Return in this exact format for each program on a new line: Name: [Program Name], Organization: [Organization Name], Organization Type: [Type], Sport: [Sport], Program Type: [Type], Skill Level: [Level], Address: [Street Address], City: [{city}], State: [{state}], Zip: [Zip Code], County: [County], Metro Area: [Metro Area], Phone: [Phone], Email: [Email], Website: [Website], Social Media Facebook: [FB], Social Media Instagram: [IG], Age Min: [Min], Age Max: [Max], Season: [Season], Registration Fee: [Fee], Notes: [Notes]"
+            if current_count < 5 and state not in self.used_states:
+                selected_city = city
+                selected_state = state
+                self.used_states.add(state)
+                break
+        
+        if not selected_city:
+            print(f"No more cities to research for query: {query}")
+            return 0
+        
+        prompt = f"Research youth {sport} programs in {selected_city}, {selected_state}. Provide detailed information for up to 20 programs. Return in this exact format for each program on a new line: Name: [Program Name], Organization: [Organization Name], Organization Type: [Type], Sport: [Sport], Program Type: [Type], Skill Level: [Level], Address: [Street Address], City: [{selected_city}], State: [{selected_state}], Zip: [Zip Code], County: [County], Metro Area: [Metro Area], Phone: [Phone], Email: [Email], Website: [Website], Social Media Facebook: [FB], Social Media Instagram: [IG], Age Min: [Min], Age Max: [Max], Season: [Season], Cost: [Summarized cost info], Notes: [Notes]"
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}]
+            )
             
-            try:
-                response = self.client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                
-                program_info = response.choices[0].message.content
-                programs = self.parse_program_info(program_info)
-                
-                for program in programs:
-                    try:
-                        handler.insert_program(**program)
-                        total_added += 1
-                        print(f"Added program: {program.get('program_name', 'Unknown')} in {city}, {state}")
-                    except Exception as e:
-                        print(f"Error inserting program in {city}, {state}: {e}")
-            except Exception as e:
-                print(f"Error researching {city}, {state}: {e}")
+            program_info = response.choices[0].message.content
+            programs = self.parse_program_info(program_info)
+            
+            for program in programs:
+                try:
+                    handler.insert_program(**program)
+                    total_added += 1
+                    print(f"Added program: {program.get('program_name', 'Unknown')} in {selected_city}, {selected_state}")
+                except Exception as e:
+                    print(f"Error inserting program in {selected_city}, {selected_state}: {e}")
+        except Exception as e:
+            print(f"Error researching {selected_city}, {selected_state}: {e}")
         
         return total_added
     
@@ -162,7 +174,7 @@ class SportsResearchAgent:
                 program_data['age_min'] = program_data.pop('age_min', '5')
                 program_data['age_max'] = program_data.pop('age_max', '18')
                 program_data['season'] = program_data.pop('season', 'Year-round')
-                program_data['registration_fee'] = program_data.pop('registration_fee', 'Varies')
+                program_data['cost'] = program_data.pop('cost', 'Unknown')
                 program_data['notes'] = program_data.pop('notes', 'Unknown')
                 program_data['contact_name'] = 'Contact Person'
                 program_data['verified'] = 'No'

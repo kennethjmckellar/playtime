@@ -6,12 +6,11 @@ class DataHandler:
     def __init__(self):
         self.columns = [
             'program_id', 'organization_name', 'organization_type', 'sport_type', 'program_name', 'program_type', 'skill_level',
-            'address_street', 'address_city', 'address_state', 'address_zip', 'county', 'metro_area', 'latitude', 'longitude',
-            'phone', 'email', 'contact_name', 'director_name', 'website', 'social_media_facebook', 'social_media_instagram',
-            'age_min', 'age_max', 'age_groups', 'gender', 'team_based', 'season', 'registration_fee', 'monthly_fee', 'annual_fee',
-            'scholarship_available', 'scholarship_percentage', 'equipment_provided', 'transportation_provided', 'reviews_text',
-            'average_rating', 'review_count', 'verified', 'data_source', 'last_verified', 'notes', 'keywords_long_tail',
-            'facility_type', 'facility_amenities', 'coaches_available', 'certifications', 'parent_involvement'
+            'address_street', 'address_city', 'address_state', 'address_zip', 'county', 'metro_area',
+            'phone', 'email', 'contact_name', 'website', 'social_media_facebook', 'social_media_instagram',
+            'age_min', 'age_max', 'age_groups', 'gender', 'team_based', 'season', 'cost',
+            'transportation_provided', 'reviews_text', 'average_rating', 'review_count', 'verified', 'data_source', 'last_verified', 'notes', 'keywords_long_tail',
+            'facility_type'
         ]
         
         if os.path.exists(PROGRAMS_CSV):
@@ -22,7 +21,7 @@ class DataHandler:
     def insert_program(self, **kwargs):
         # Required fields: all address, name, and contact information, plus website or social media
         required = [
-            'program_id', 'organization_name', 'program_name', 'contact_name',
+            'program_id', 'organization_name', 'program_name',
             'address_street', 'address_city', 'address_state', 'address_zip', 'county', 'metro_area',
             'phone', 'email'
         ]
