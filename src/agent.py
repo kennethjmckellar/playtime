@@ -22,7 +22,7 @@ class SportsResearchAgent:
         
         info = ''
         for city, state in locations:
-            prompt = f"Research youth {sport} programs in {city}, {state}. Provide detailed information for up to 2 programs. Return in this exact format for each program on a new line: Name: [Name], Organization: [Organization], Organization Type: [Type], Sport: [Sport], Program Type: [Type], Skill Level: [Level], Address: [Address], City: [City], State: [State], Zip: [Zip], County: [County], Metro Area: [Metro], Phone: [Phone], Email: [Email], Website: [Website], Social Media Facebook: [FB], Social Media Instagram: [IG], Age Min: [Min], Age Max: [Max], Season: [Season], Registration Fee: [Fee], Notes: [Notes]"
+            prompt = f"Research youth {sport} programs in {city}, {state}. Provide detailed information for up to 2 programs. Return in this exact format for each program on a new line: Name: [Program Name], Organization: [Organization Name], Organization Type: [Type], Sport: [Sport], Program Type: [Type], Skill Level: [Level], Address: [Street Address], City: [{city}], State: [{state}], Zip: [Zip Code], County: [County], Metro Area: [Metro Area], Phone: [Phone], Email: [Email], Website: [Website], Social Media Facebook: [FB], Social Media Instagram: [IG], Age Min: [Min], Age Max: [Max], Season: [Season], Registration Fee: [Fee], Notes: [Notes]"
             
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -63,16 +63,16 @@ class SportsResearchAgent:
                         key = key.lower().replace(' ', '_')
                         program_data[key] = value
                 # Map keys to match dict
-                program_data['name'] = program_data.pop('name', 'Unknown')
+                program_data['program_name'] = program_data.pop('name', 'Unknown')
                 program_data['organization_name'] = program_data.pop('organization', 'Unknown')
                 program_data['organization_type'] = program_data.pop('organization_type', 'Nonprofit')
                 program_data['sport_type'] = program_data.pop('sport', 'Unknown')
                 program_data['program_type'] = program_data.pop('program_type', 'League')
                 program_data['skill_level'] = program_data.pop('skill_level', 'all_levels')
-                program_data['address'] = program_data.pop('address', 'Unknown')
-                program_data['city'] = program_data.pop('city', 'Unknown')
-                program_data['state'] = program_data.pop('state', 'Unknown')
-                program_data['zip_code'] = program_data.pop('zip', 'Unknown')
+                program_data['address_street'] = program_data.pop('address', 'Unknown')
+                program_data['address_city'] = program_data.pop('city', 'Unknown')
+                program_data['address_state'] = program_data.pop('state', 'Unknown')
+                program_data['address_zip'] = program_data.pop('zip', 'Unknown')
                 # keep county, metro_area, phone, email, website
                 program_data['social_media_facebook'] = program_data.pop('social_media_facebook', 'Unknown')
                 program_data['social_media_instagram'] = program_data.pop('social_media_instagram', 'Unknown')
@@ -84,7 +84,7 @@ class SportsResearchAgent:
                 program_data['contact_name'] = 'Contact Person'
                 program_data['verified'] = 'No'
                 program_data['data_source'] = 'AI Research'
-                program_data['program_id'] = f"{program_data['organization_name'].lower().replace(' ', '_')}_{program_data['sport_type'].lower()}_{program_data['name'].lower().replace(' ', '_')[:20]}"
+                program_data['program_id'] = f"{program_data['organization_name'].lower().replace(' ', '_')}_{program_data['sport_type'].lower()}_{program_data['program_name'].lower().replace(' ', '_')[:20]}"
                 programs.append(program_data)
         return programs
 
