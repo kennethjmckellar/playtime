@@ -13,12 +13,14 @@ class SportsResearchAgent:
         Provide information in the following format for each program. ALL address, name, and contact information is required, and either website or social media links must be provided:
         Program: Program Name, Organization: Organization Name, Organization Type: Type, Sport: Sport Type, Program Type: Type (e.g., League, Camp), Skill Level: Level, Address Street: Street, Address City: City, Address State: State, Address Zip: Zip, County: County, Metro Area: Area, Phone: Phone, Email: Email, Contact Name: Name, Website: URL, Social Media Facebook: URL, Social Media Instagram: URL, Age Min: Min Age, Age Max: Max Age, Season: Season, Registration Fee: Fee, Notes: Description
         Ensure all required fields are provided for each program, including at least website or one social media link."""
-        response = self.client.completions.create(
-            model="text-davinci-003",
-            prompt=prompt,
+        response = self.client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
             max_tokens=2000
         )
-        return response.choices[0].text.strip()
+        return response.choices[0].message.content.strip()
 
     def scrape_website(self, url):
         # Simple web scraping example
