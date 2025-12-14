@@ -5,7 +5,7 @@ from config.config import OPENAI_API_KEY
 
 class SportsResearchAgent:
     def __init__(self):
-        pass  # No AI client needed for scraping
+        self.client = OpenAI(api_key=OPENAI_API_KEY)
 
     def research_sports_programs(self, query):
         # Instead of AI, scrape known websites for youth sports programs
